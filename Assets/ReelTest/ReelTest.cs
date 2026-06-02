@@ -12,14 +12,23 @@ public class ReelTest : MonoBehaviour
 
     [Header("Spin")]
     [SerializeField] private float spinDuration = 3f;
-    [SerializeField] private float startSpeed = 400f;
-    [SerializeField] private float stopSpeed = 20f;
+    [SerializeField] private float spinSpeed = 400f;
+
+    [Header("Stop")]
+    [SerializeField] private float alignSpeed = 300f;
+
+    [Header("Layout")]
+    [SerializeField] private float symbolSpacing = 170f;
 
     private bool isSpinning;
 
-    private const float TOP_POSITION = 340f;
-    private const float BOTTOM_POSITION = -340f;
-    private const float SPACING = 170f;
+    private readonly float[] validPositions =
+    {
+        340f,
+        170f,
+        0f,
+        -170f
+    };
 
     private void Update()
     {
@@ -37,82 +46,85 @@ public class ReelTest : MonoBehaviour
 
         while (timer < spinDuration)
         {
-            MoveReels(startSpeed);
+            MoveReels();
 
             timer += Time.deltaTime;
             yield return null;
         }
 
-        float currentSpeed = startSpeed;
-
-        while (currentSpeed > stopSpeed)
-        {
-            currentSpeed = Mathf.Lerp(
-                currentSpeed,
-                0f,
-                Time.deltaTime * 2f);
-
-            MoveReels(currentSpeed);
-
-            yield return null;
-        }
-
-        yield return StartCoroutine(AlignRoutine());
+        yield return StartCoroutine(AlignToGrid());
 
         isSpinning = false;
     }
 
-    private IEnumerator AlignRoutine()
+    private void MoveReels()
     {
-        while (true)
+        foreach (Image image in reelImages)
         {
-            MoveReels(stopSpeed);
+            image.rectTransform.anchoredPosition +=
+                Vector2.down * spinSpeed * Time.deltaTime;
+        }
 
-            float topY = reelImages[0].rectTransform.anchoredPosition.y;
+        Image bottomImage = reelImages[reelImages.Length - 1];
+        RectTransform bottomRect = bottomImage.rectTransform;
 
-            float remainder =
-                Mathf.Abs((topY - TOP_POSITION) % SPACING);
+        if (bottomRect.anchoredPosition.y < -255f)
+        {
+            RectTransform topRect = reelImages[0].rectTransform;
 
-            if (remainder < 3f || remainder > SPACING - 3f)
+            bottomRect.anchoredPosition = new Vector2(
+                bottomRect.anchoredPosition.x,
+                topRect.anchoredPosition.y + symbolSpacing);
+
+            bottomImage.sprite = GetRandomSymbol();
+
+            RotateArray();
+        }
+    }
+
+    private IEnumerator AlignToGrid()
+    {
+        bool aligned = false;
+
+        while (!aligned)
+        {
+            aligned = true;
+
+            for (int i = 0; i < reelImages.Length; i++)
             {
-                AlignPerfectly();
-                yield break;
+                RectTransform rt = reelImages[i].rectTransform;
+
+                float targetY = validPositions[i];
+
+                float newY = Mathf.MoveTowards(
+                    rt.anchoredPosition.y,
+                    targetY,
+                    alignSpeed * Time.deltaTime);
+
+                rt.anchoredPosition = new Vector2(
+                    rt.anchoredPosition.x,
+                    newY);
+
+                if (Mathf.Abs(newY - targetY) > 0.01f)
+                {
+                    aligned = false;
+                }
             }
 
             yield return null;
         }
     }
 
-    private void MoveReels(float speed)
+    private void RotateArray()
     {
-        foreach (Image image in reelImages)
+        Image last = reelImages[reelImages.Length - 1];
+
+        for (int i = reelImages.Length - 1; i > 0; i--)
         {
-            RectTransform rt = image.rectTransform;
-
-            rt.anchoredPosition += Vector2.down * speed * Time.deltaTime;
-
-            if (rt.anchoredPosition.y < BOTTOM_POSITION)
-            {
-                rt.anchoredPosition += Vector2.up * (SPACING * reelImages.Length);
-
-                image.sprite = GetRandomSymbol();
-            }
+            reelImages[i] = reelImages[i - 1];
         }
-    }
 
-    private void AlignPerfectly()
-    {
-        float offset =
-            reelImages[0].rectTransform.anchoredPosition.y - TOP_POSITION;
-
-        foreach (Image image in reelImages)
-        {
-            RectTransform rt = image.rectTransform;
-
-            rt.anchoredPosition = new Vector2(
-                rt.anchoredPosition.x,
-                rt.anchoredPosition.y - offset);
-        }
+        reelImages[0] = last;
     }
 
     private Sprite GetRandomSymbol()
