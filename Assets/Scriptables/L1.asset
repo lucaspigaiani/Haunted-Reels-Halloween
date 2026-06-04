@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: L1
   m_EditorClassIdentifier: 
   Type: 3
-  Weight: 0
+  Weight: 17
   Sprite: {fileID: 21300000, guid: ae6bcf37066ea8b43a2a74f523272417, type: 3}
   SpineSkin: 
-  Multiplier3: 5
-  Multiplier4: 25
-  Multiplier5: 150
+  Multiplier3: 2
+  Multiplier4: 8
+  Multiplier5: 30

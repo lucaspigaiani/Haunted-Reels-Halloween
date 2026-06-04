@@ -32,6 +32,7 @@ public class RNGService : MonoBehaviour
         return result;
     }
 
+    //TODO: remover
     public void LogSpinResult(SpinResult result)
     {
         Debug.Log("===== SPIN RESULT =====");

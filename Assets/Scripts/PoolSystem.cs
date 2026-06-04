@@ -6,14 +6,11 @@ public class PoolSystem : MonoBehaviour
 {
     [Header("Visuals")]
     [SerializeField] private Image imageSymbol;
-
     [SerializeField] private SkeletonGraphic spineSymbol;
 
     [Header("Animator")]
     [SerializeField] private ReelAnimator reelAnimator;
-
     private SymbolSystem currentSymbol;
-
     public SymbolSystem CurrentSymbol => currentSymbol;
 
     public void ShowSymbol(SymbolSystem symbol)
@@ -57,4 +54,21 @@ public class PoolSystem : MonoBehaviour
             reelAnimator.RegisterSpine(spineSymbol);
         }
     }
+
+    //todo: remover
+    /*private void ShowSpine(SymbolSystem symbol)
+    {
+        Debug.Log($"SHOW SPINE {symbol.Type}");
+
+        imageSymbol.gameObject.SetActive(false);
+        spineSymbol.gameObject.SetActive(true);
+
+        spineSymbol.initialSkinName = symbol.SpineSkin;
+
+        Debug.Log("ANTES INIT");
+
+        spineSymbol.Initialize(true);
+
+        Debug.Log("DEPOIS INIT");
+    }*/
 }

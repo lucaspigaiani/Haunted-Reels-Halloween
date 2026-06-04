@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: H2
   m_EditorClassIdentifier: 
   Type: 1
-  Weight: 0
+  Weight: 7
   Sprite: {fileID: 0}
   SpineSkin: pumpkin
-  Multiplier3: 5
-  Multiplier4: 25
-  Multiplier5: 150
+  Multiplier3: 4
+  Multiplier4: 15
+  Multiplier5: 100

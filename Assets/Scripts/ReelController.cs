@@ -168,6 +168,31 @@ public class ReelController : MonoBehaviour
         _onReelStopped?.Invoke();
     }
 
+    public PoolSystem GetVisibleCell(int row)
+    {
+        float targetY = row switch
+        {
+            0 => 170f, // topo
+            1 => 0f,   // meio
+            2 => -170f,// baixo
+            _ => 0f
+        };
+
+        foreach (var cell in cells)
+        {
+            RectTransform rt =
+                cell.GetComponent<RectTransform>();
+
+            if (Mathf.Abs(
+                rt.anchoredPosition.y - targetY) < 1f)
+            {
+                return cell;
+            }
+        }
+
+        return null;
+    }
+
     private void AlignCells()
     {
         for (int i = 0; i < cells.Length; i++)

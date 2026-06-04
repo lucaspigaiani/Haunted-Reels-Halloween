@@ -13,9 +13,9 @@ MonoBehaviour:
   m_Name: H3
   m_EditorClassIdentifier: 
   Type: 2
-  Weight: 0
+  Weight: 10
   Sprite: {fileID: 0}
   SpineSkin: skull
-  Multiplier3: 5
-  Multiplier4: 25
-  Multiplier5: 150
+  Multiplier3: 3
+  Multiplier4: 10
+  Multiplier5: 60

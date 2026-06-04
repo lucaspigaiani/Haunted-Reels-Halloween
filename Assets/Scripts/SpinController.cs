@@ -66,7 +66,8 @@ public class SpinController : MonoBehaviour
         // Resultado é definido ANTES da animação.
         _currentSpinResult = rngService.GenerateSpinResult();
 
-        rngService.LogSpinResult(_currentSpinResult);
+        //TODO: remover
+        //rngService.LogSpinResult(_currentSpinResult);
 
         for (int i = 0; i < reels.Length; i++)
         {
@@ -92,10 +93,7 @@ public class SpinController : MonoBehaviour
 
     private void FinishSpin()
     {
-        var result = paylineSystem.Evaluate(
-            _currentSpinResult,
-            _currentBet
-        );
+        var result = paylineSystem.Evaluate( _currentSpinResult, _currentBet);
 
         PayWin(result.TotalWin);
 

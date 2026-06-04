@@ -13,35 +13,21 @@ public class PaylineSystem : MonoBehaviour
     [SerializeField] private AudioClip winMusic;
     [SerializeField] private AudioClip payoutSfx;
 
-    /*
-     * 5 reels x 3 rows
-     *
-     * 0 = top
-     * 1 = middle
-     * 2 = bottom
-     */
-
     private readonly int[,] paylines =
     {
         {1,1,1,1,1}, // Middle
         {0,0,0,0,0}, // Top
         {2,2,2,2,2}, // Bottom
-
-        {0,1,2,1,0},
-        {2,1,0,1,2},
-
-        {0,0,1,0,0},
-        {2,2,1,2,2},
-
-        {1,0,0,0,1},
-        {1,2,2,2,1},
-
-        {0,1,1,1,0}
+        {2,1,0,1,2}, // V invertido
+        {0,1,2,1,0}, // V normal
+        {0,0,1,2,2}, // Diagonal descendente
+        {2,2,1,0,0}, // Diagonal ascendente
+        {0,1,1,2,2}, // Escada descendente
+        {2,1,1,0,0}, // Escada ascendente
+        {0,1,1,1,2}  // Onda suave
     };
 
-    public PaylineResult Evaluate(
-        SpinResult spinResult,
-        int lineBet)
+    public PaylineResult Evaluate(SpinResult spinResult, int lineBet)
     {
         PlayEvaluateMusic();
 
@@ -49,11 +35,7 @@ public class PaylineSystem : MonoBehaviour
 
         for (int lineIndex = 0; lineIndex < paylines.GetLength(0); lineIndex++)
         {
-            EvaluateLine(
-                spinResult,
-                lineIndex,
-                lineBet,
-                result);
+            EvaluateLine(spinResult, lineIndex, lineBet, result);
         }
 
         if (result.TotalWin > 0)
@@ -64,11 +46,7 @@ public class PaylineSystem : MonoBehaviour
         return result;
     }
 
-    private void EvaluateLine(
-        SpinResult spinResult,
-        int lineIndex,
-        int lineBet,
-        PaylineResult result)
+    private void EvaluateLine(SpinResult spinResult, int lineIndex, int lineBet, PaylineResult result)
     {
         SymbolSystem firstSymbol = null;
 
@@ -123,10 +101,7 @@ public class PaylineSystem : MonoBehaviour
         result.WinningLines.Add(lineIndex);
     }
 
-    private float CalculatePayout(
-        SymbolSystem symbol,
-        int matches,
-        int lineBet)
+    private float CalculatePayout(SymbolSystem symbol, int matches, int lineBet)
     {
         if (symbol == null)
             return 0;
@@ -154,8 +129,7 @@ public class PaylineSystem : MonoBehaviour
         musicSource.Play();
     }
 
-    private void PlayWinEffects(
-        PaylineResult result)
+    private void PlayWinEffects(PaylineResult result)
     {
         if (musicSource != null &&
             winMusic != null)

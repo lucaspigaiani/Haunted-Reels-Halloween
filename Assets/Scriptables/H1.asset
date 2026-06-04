@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: H1
   m_EditorClassIdentifier: 
   Type: 0
-  Weight: 0
+  Weight: 5
   Sprite: {fileID: 0}
   SpineSkin: witch
   Multiplier3: 5
