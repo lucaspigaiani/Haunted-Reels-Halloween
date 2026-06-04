@@ -1,5 +1,6 @@
 using UnityEngine;
 using System;
+using System.Linq;
 
 public class ReelController : MonoBehaviour
 {
@@ -54,8 +55,7 @@ public class ReelController : MonoBehaviour
     {
         _finalSymbols = finalSymbols;
 
-        _stopRecycleCount =
-            _recycleCount + extraCycles;
+        _stopRecycleCount = _recycleCount + extraCycles;
 
         _isPreparingStop = true;
     }
@@ -72,17 +72,14 @@ public class ReelController : MonoBehaviour
     {
         foreach (PoolSystem cell in cells)
         {
-            RectTransform rt =
-                cell.GetComponent<RectTransform>();
+            RectTransform rt = cell.GetComponent<RectTransform>();
 
-            rt.anchoredPosition +=
-                Vector2.down * spinSpeed * Time.deltaTime;
+            rt.anchoredPosition += Vector2.down * spinSpeed * Time.deltaTime;
         }
 
         PoolSystem bottomCell = cells[cells.Length - 1];
 
-        RectTransform bottomRect =
-            bottomCell.GetComponent<RectTransform>();
+        RectTransform bottomRect = bottomCell.GetComponent<RectTransform>();
 
         if (bottomRect.anchoredPosition.y < recyclePosition)
         {
@@ -94,15 +91,11 @@ public class ReelController : MonoBehaviour
     {
         _recycleCount++;
 
-        RectTransform recycledRect =
-            recycledCell.GetComponent<RectTransform>();
+        RectTransform recycledRect = recycledCell.GetComponent<RectTransform>();
 
-        RectTransform topRect =
-            cells[0].GetComponent<RectTransform>();
+        RectTransform topRect = cells[0].GetComponent<RectTransform>();
 
-        recycledRect.anchoredPosition = new Vector2(
-            recycledRect.anchoredPosition.x,
-            topRect.anchoredPosition.y + symbolSpacing);
+        recycledRect.anchoredPosition = new Vector2(recycledRect.anchoredPosition.x, topRect.anchoredPosition.y + symbolSpacing);
 
         SymbolSystem symbol;
 
@@ -168,29 +161,86 @@ public class ReelController : MonoBehaviour
         _onReelStopped?.Invoke();
     }
 
-    public PoolSystem GetVisibleCell(int row)
+    public PoolSystem[] GetVisibleCells()
     {
-        float targetY = row switch
+       // Debug.Log($"=== GetVisibleCells CHAMADO ===");
+       // Debug.Log($"Total de cells na lista: {cells.Length}");
+
+        PoolSystem[] visibleCells = new PoolSystem[3];
+
+        // Inicializa com null para debug
+        for (int i = 0; i < visibleCells.Length; i++)
         {
-            0 => 170f, // topo
-            1 => 0f,   // meio
-            2 => -170f,// baixo
-            _ => 0f
-        };
+            visibleCells[i] = null;
+        }
+
+        int cellsFound = 0;
 
         foreach (var cell in cells)
         {
-            RectTransform rt =
-                cell.GetComponent<RectTransform>();
-
-            if (Mathf.Abs(
-                rt.anchoredPosition.y - targetY) < 1f)
+            if (cell == null)
             {
-                return cell;
+                Debug.LogWarning("Cell é NULL na lista!");
+                continue;
+            }
+
+            if (cell.GetComponent<RectTransform>() == null)
+            {
+                Debug.LogError($"Cell {cell.name} não tem RectTransform!");
+                continue;
+            }
+
+            float y = cell.GetComponent<RectTransform>().anchoredPosition.y;
+
+           // Debug.Log($"Verificando cell: {cell.name}, posição Y: {y}");
+
+            // Verifica posição 170 (topo)
+            if (Mathf.Abs(y - 170f) < 5f)
+            {
+               // Debug.Log($"-> Cell {cell.name} é VISIBLE na posição 0 (Topo) - Y={y}");
+                visibleCells[0] = cell;
+                cellsFound++;
+            }
+            // Verifica posição 0 (meio)
+            else if (Mathf.Abs(y - 0f) < 5f)
+            {
+               // Debug.Log($"-> Cell {cell.name} é VISIBLE na posição 1 (Meio) - Y={y}");
+                visibleCells[1] = cell;
+                cellsFound++;
+            }
+            // Verifica posição -170 (baixo)
+            else if (Mathf.Abs(y + 170f) < 5f)
+            {
+                //Debug.Log($"-> Cell {cell.name} é VISIBLE na posição 2 (Baixo) - Y={y}");
+                visibleCells[2] = cell;
+                cellsFound++;
+            }
+            else
+            {
+                //Debug.Log($"-> Cell {cell.name} NÃO está visível - Y={y} (fora do range)");
             }
         }
 
-        return null;
+        // Debug do resultado final
+        /*
+        Debug.Log($"=== RESULTADO GetVisibleCells ===");
+        Debug.Log($"Total de células visíveis encontradas: {cellsFound}/3");
+
+        for (int i = 0; i < visibleCells.Length; i++)
+        {
+            if (visibleCells[i] != null)
+            {
+                Debug.Log($"Posição {i}: {visibleCells[i].name} - Position Y: {visibleCells[i].GetComponent<RectTransform>().anchoredPosition.y}");
+            }
+            else
+            {
+                Debug.LogError($"Posição {i}: NULL - Nenhuma célula encontrada nesta posição!");
+            }
+        }
+
+        Debug.Log($"===================================");*/
+
+        return visibleCells;
     }
 
     private void AlignCells()
