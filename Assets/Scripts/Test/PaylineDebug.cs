@@ -1,16 +1,23 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections.Generic;
 using System.Collections;
+using System.Collections.Generic;
 
 public class PaylineDebug : MonoBehaviour
 {
+    [Header("References")]
     [SerializeField] private ReelController[] reels;
-    [SerializeField] private RectTransform canvasRect; // Referência ao Canvas
-    [SerializeField] private GameObject linePrefab; // Prefab com Image (ou cria dinamicamente)
-    [SerializeField] private float lineWidth = 10f;
-    [SerializeField] private Color lineColor = Color.yellow;
-    [SerializeField] private float displayDuration = 2f;
+    [SerializeField] private RectTransform canvasRect;
+    [SerializeField] private GameObject linePrefab;
+
+    [Header("Visual")]
+    [SerializeField] private float lineWidth = 5f;
+
+    [Header("Timing")]
+    [SerializeField] private float paylineInterval = 0.1f;
+    [SerializeField] private float displayDuration = 0.4f;
+
+    private Coroutine displayRoutine;
 
     private readonly int[,] paylines =
     {
@@ -26,136 +33,121 @@ public class PaylineDebug : MonoBehaviour
         {0,1,1,1,2}
     };
 
-    private List<GameObject> activeLines = new List<GameObject>();
-    private List<List<PoolSystem>> visibleCellsPerReel = new List<List<PoolSystem>>();
+    private readonly List<GameObject> activeLines = new();
 
-    void Start()
+    private void Update()
     {
-        // Cria o prefab de linha dinamicamente se não existir
-        if (linePrefab == null)
-        {
-            CreateLinePrefab();
-        }
+        if (!Input.GetKeyDown(KeyCode.Space))
+            return;
+
+        if (displayRoutine != null)
+            StopCoroutine(displayRoutine);
+
+        displayRoutine = StartCoroutine(ShowPaylinesSequentially());
     }
 
-    void CreateLinePrefab()
+    private IEnumerator ShowPaylinesSequentially()
     {
-        linePrefab = new GameObject("Line", typeof(Image));
-        linePrefab.transform.SetParent(canvasRect);
-        var image = linePrefab.GetComponent<Image>();
-        image.color = lineColor;
-        linePrefab.SetActive(false);
-    }
-
-    void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            // Chama UMA vez e desenha TODAS as 10 linhas
-            DrawAllPaylines();
-        }
-    }
-
-    void DrawAllPaylines()
-    {
-        // Limpa linhas anteriores
         ClearLines();
 
-        // Pega células visíveis uma única vez
-        visibleCellsPerReel.Clear();
+        List<List<PoolSystem>> visibleCellsPerReel = new();
+
         for (int reelIndex = 0; reelIndex < reels.Length; reelIndex++)
         {
             PoolSystem[] visibleCells = reels[reelIndex].GetVisibleCells();
+
             visibleCellsPerReel.Add(new List<PoolSystem>(visibleCells));
         }
 
-        // Desenha todas as 10 paylines
-        for (int i = 0; i < paylines.GetLength(0); i++)
+        for (int paylineIndex = 0; paylineIndex < paylines.GetLength(0); paylineIndex++)
         {
-            DrawSinglePayline(i);
+            DrawSinglePayline(paylineIndex, visibleCellsPerReel);
+
+            yield return new WaitForSeconds(paylineInterval);
         }
 
-        // Agenda para desligar depois do tempo
-        StartCoroutine(HideLinesAfterDelay(displayDuration));
+        yield return new WaitForSeconds(displayDuration);
+
+        ClearLines();
+
+        displayRoutine = null;
     }
 
-    void DrawSinglePayline(int paylineIndex)
+    private void DrawSinglePayline(int paylineIndex, List<List<PoolSystem>> visibleCellsPerReel)
     {
-        List<Vector2> screenPoints = new List<Vector2>();
+        Vector2[] points = new Vector2[5];
 
-        // Coleta as células da payline e converte para posições da tela
         for (int reelIndex = 0; reelIndex < reels.Length; reelIndex++)
         {
             int targetRow = paylines[paylineIndex, reelIndex];
+
             PoolSystem selectedCell = visibleCellsPerReel[reelIndex][targetRow];
 
-            if (selectedCell != null)
-            {
-                // Converte posição do mundo para tela
-                Vector2 screenPos = Camera.main.WorldToScreenPoint(selectedCell.transform.position);
-                screenPoints.Add(screenPos);
-            }
+            points[reelIndex] = selectedCell.transform.position;
         }
 
-        // Cria a linha entre os pontos
-        CreateUILine(screenPoints, paylineIndex);
-    }
-
-    void CreateUILine(List<Vector2> points, int lineIndex)
-    {
-        for (int i = 0; i < points.Count - 1; i++)
+        for (int i = 0; i < points.Length - 1; i++)
         {
-            CreateLineSegment(points[i], points[i + 1], lineIndex);
+            CreateLineSegment(points[i], points[i + 1], paylineIndex);
         }
     }
 
-    void CreateLineSegment(Vector2 start, Vector2 end, int lineIndex)
+    private void CreateLineSegment(Vector2 start, Vector2 end, int lineIndex)
     {
         GameObject lineObj = Instantiate(linePrefab, canvasRect);
+
         lineObj.SetActive(true);
 
         RectTransform rect = lineObj.GetComponent<RectTransform>();
+
         Image image = lineObj.GetComponent<Image>();
 
-        // Calcula distância e ângulo
         Vector2 direction = end - start;
-        float distance = Vector2.Distance(start, end);
+
+        float distance = direction.magnitude;
+
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
 
-        // Posiciona e rotaciona a linha
-        rect.anchoredPosition = start;
-        rect.sizeDelta = new Vector2(distance, lineWidth);
+        Vector2 center = (start + end) * 0.5f;
+
+        rect.position = center;
+
+        rect.sizeDelta = new Vector2(distance,lineWidth);
+
         rect.rotation = Quaternion.Euler(0, 0, angle);
 
-        // Define cor baseada no índice da linha
-        Color lineColorVariation = GetLineColor(lineIndex);
-        image.color = lineColorVariation;
+        image.color = GetLineColor(lineIndex);
 
         activeLines.Add(lineObj);
     }
 
-    Color GetLineColor(int lineIndex)
+    private Color GetLineColor(int lineIndex)
     {
-        // Cores diferentes para cada linha
-        Color[] colors = {
-            Color.yellow, Color.red, Color.green, Color.blue, Color.cyan,
-            Color.magenta, Color.white, new Color(1, 0.5f, 0), Color.gray, Color.black
+        Color[] colors =
+        {
+            Color.yellow,
+            Color.red,
+            Color.green,
+            Color.blue,
+            Color.cyan,
+            Color.magenta,
+            Color.white,
+            new Color(1f, 0.5f, 0f),
+            Color.gray,
+            Color.black
         };
+
         return colors[lineIndex % colors.Length];
     }
 
-    void ClearLines()
+    private void ClearLines()
     {
-        foreach (var line in activeLines)
+        foreach (GameObject line in activeLines)
         {
-            Destroy(line);
+            if (line != null)
+                Destroy(line);
         }
-        activeLines.Clear();
-    }
 
-    IEnumerator HideLinesAfterDelay(float delay)
-    {
-        yield return new WaitForSeconds(delay);
-        ClearLines();
+        activeLines.Clear();
     }
 }
