@@ -8,6 +8,8 @@ public class SpinController : MonoBehaviour
 {
     [Header("UI")]
     [SerializeField] private Button spinButton;
+    [SerializeField] private Button autoPlayButton;
+    [SerializeField] private Button increaseBetButton;
     [SerializeField] private TMP_Text creditsText;
     [SerializeField] private TMP_Text betText;
     [SerializeField] private TMP_Text winText;
@@ -29,10 +31,9 @@ public class SpinController : MonoBehaviour
 
     private float _credits;
     private int _currentBet;
-
     private bool _isSpinning;
-
     private SpinResult _currentSpinResult;
+    private int _stoppedReels;
 
     private void Start()
     {
@@ -45,8 +46,31 @@ public class SpinController : MonoBehaviour
         }
 
         UpdateUI();
+        winText.text = FormatMoney(0f);
+        UpdateButtonsState();
     }
 
+    /// <summary>
+    /// Atualiza o estado dos botões baseado nas condições atuais
+    /// </summary>
+    private void UpdateButtonsState()
+    {
+        bool canChangeBet = !_isSpinning && !autoPlay;
+
+        if (increaseBetButton != null)
+            increaseBetButton.interactable = canChangeBet;
+
+        if (autoPlayButton != null)
+            autoPlayButton.interactable = !_isSpinning;
+
+        if (spinButton != null)
+            spinButton.interactable = !_isSpinning && CanBet();
+    }
+
+    /// <summary>
+    /// Inicia uma nova rodada de spin
+    /// Chamado pelo botão Spin ou pelo AutoPlay
+    /// </summary>
     public void StartSpin()
     {
         if (_isSpinning)
@@ -58,18 +82,12 @@ public class SpinController : MonoBehaviour
         paylineSystem.StopPaylineDisplay();
 
         _isSpinning = true;
-
-        spinButton.interactable = false;
+        UpdateButtonsState();
 
         _credits -= _currentBet;
-
         UpdateUI();
 
-        // Resultado é definido ANTES da animação.
         _currentSpinResult = rngService.GenerateSpinResult();
-
-        //TODO: remover
-        rngService.LogSpinResult(_currentSpinResult);
 
         for (int i = 0; i < reels.Length; i++)
         {
@@ -79,8 +97,9 @@ public class SpinController : MonoBehaviour
         StartCoroutine(PrepareStopRoutine());
     }
 
-    private int _stoppedReels;
-
+    /// <summary>
+    /// Callback chamado por cada ReelController quando o rolo para
+    /// </summary>
     private void OnReelStopped()
     {
         _stoppedReels++;
@@ -89,21 +108,20 @@ public class SpinController : MonoBehaviour
             return;
 
         _stoppedReels = 0;
-
         FinishSpin();
     }
 
+    /// <summary>
+    /// Finaliza o spin, calcula prêmios e atualiza UI
+    /// </summary>
     private void FinishSpin()
     {
-        var result = paylineSystem.Evaluate( _currentSpinResult, _currentBet);
-
+        var result = paylineSystem.Evaluate(_currentSpinResult, _currentBet);
         PayWin(result.TotalWin);
-
-        winText.text = result.TotalWin.ToString();
+        winText.text = FormatMoney(result.TotalWin);
 
         _isSpinning = false;
-
-        spinButton.interactable = true;
+        UpdateButtonsState();
 
         if (autoPlay)
         {
@@ -111,30 +129,35 @@ public class SpinController : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Aguarda um tempo e prepara cada rolo para parar
+    /// </summary>
     private IEnumerator PrepareStopRoutine()
     {
         yield return new WaitForSeconds(2f);
 
         for (int i = 0; i < reels.Length; i++)
         {
-            reels[i].PrepareStop(
-                GetReelResult(i),
-                5 + i * 2
-            );
+            reels[i].PrepareStop(GetReelResult(i), 5 + i * 2);
         }
     }
 
+    /// <summary>
+    /// Retorna os símbolos finais de um rolo específico
+    /// </summary>
     private SymbolSystem[] GetReelResult(int reelIndex)
     {
         return new SymbolSystem[]
         {
-        _currentSpinResult.Grid[reelIndex, 0],
-        _currentSpinResult.Grid[reelIndex, 1],
-        _currentSpinResult.Grid[reelIndex, 2]
+            _currentSpinResult.Grid[reelIndex, 0],
+            _currentSpinResult.Grid[reelIndex, 1],
+            _currentSpinResult.Grid[reelIndex, 2]
         };
-
     }
 
+    /// <summary>
+    /// Executa spins automáticos em sequência
+    /// </summary>
     private IEnumerator AutoPlayRoutine()
     {
         yield return new WaitForSeconds(autoPlayDelay);
@@ -146,42 +169,51 @@ public class SpinController : MonoBehaviour
             yield break;
 
         if (!CanBet())
+        {
+            autoPlay = false;
+            UpdateButtonsState();
             yield break;
+        }
 
         StartSpin();
     }
 
-    public void AutoPlay()
-    {
-        if (autoPlay == false)
-        {
-            autoPlay = true;
-
-            if (!_isSpinning && CanBet())
-            {
-                StartSpin();
-            }
-        }
-        else if (autoPlay == true)
-        {
-            autoPlay = false;
-        }
-    }
-
+    /// <summary>
+    /// Alterna o modo Auto Play
+    /// Chamado pelo botão Auto Play via Inspector
+    /// </summary>
     public void ToggleAutoPlay()
     {
-        autoPlay = !autoPlay;
+        if (_isSpinning)
+            return;
 
-        if (autoPlay &&
-            !_isSpinning &&
-            CanBet())
+        autoPlay = !autoPlay;
+        UpdateButtonsState();
+
+        if (autoPlayButton != null)
+        {
+            var btnText = autoPlayButton.GetComponentInChildren<TMP_Text>();
+            if (btnText != null)
+            {
+                btnText.text = autoPlay ? "AUTO ON" : "AUTO OFF";
+            }
+        }
+
+        if (autoPlay && !_isSpinning && CanBet())
         {
             StartSpin();
         }
     }
 
+    /// <summary>
+    /// Aumenta o valor da aposta
+    /// Chamado pelo botão + via Inspector
+    /// </summary>
     public void IncreaseBet()
     {
+        if (_isSpinning || autoPlay)
+            return;
+
         _currentBet += betStep;
 
         if (_currentBet > maxBet)
@@ -190,41 +222,51 @@ public class SpinController : MonoBehaviour
         UpdateUI();
     }
 
-    public void DecreaseBet()
-    {
-        _currentBet -= betStep;
-
-        if (_currentBet < minBet)
-            _currentBet = minBet;
-
-        UpdateUI();
-    }
-
+    /// <summary>
+    /// Verifica se o jogador tem créditos suficientes para a aposta atual
+    /// </summary>
     public bool CanBet()
     {
         return _credits >= _currentBet;
     }
 
+    /// <summary>
+    /// Adiciona créditos ao jogador
+    /// Chamado externamente para recarga
+    /// </summary>
     public void AddCredits(int amount)
     {
         _credits += amount;
-
         UpdateUI();
+        UpdateButtonsState();
     }
 
+    /// <summary>
+    /// Paga o prêmio ao jogador
+    /// Chamado pelo FinishSpin após avaliação das paylines
+    /// </summary>
     public void PayWin(float amount)
     {
         if (amount <= 0)
             return;
 
         _credits += amount;
-
         UpdateUI();
     }
 
     private void UpdateUI()
     {
-        creditsText.text = _credits.ToString();
-        betText.text = _currentBet.ToString();
+        creditsText.text = FormatMoney(_credits);
+        betText.text = FormatMoney(_currentBet);
+    }
+
+    private string FormatMoney(float value)
+    {
+        return value.ToString("N2", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
+    }
+
+    private string FormatMoney(int value)
+    {
+        return value.ToString("N0", System.Globalization.CultureInfo.GetCultureInfo("pt-BR"));
     }
 }

@@ -10,9 +10,14 @@ public class PoolSystem : MonoBehaviour
 
     [Header("Animator")]
     [SerializeField] private ReelAnimator reelAnimator;
+
     private SymbolSystem currentSymbol;
     public SymbolSystem CurrentSymbol => currentSymbol;
 
+    /// <summary>
+    /// Exibe o símbolo na célula, escolhendo entre imagem estática ou animação Spine
+    /// Chamado pelo ReelController durante o spin e ao aplicar símbolos finais
+    /// </summary>
     public void ShowSymbol(SymbolSystem symbol)
     {
         currentSymbol = symbol;
@@ -27,6 +32,9 @@ public class PoolSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Exibe símbolo como imagem estática (símbolos de baixo valor)
+    /// </summary>
     private void ShowImage(SymbolSystem symbol)
     {
         imageSymbol.gameObject.SetActive(true);
@@ -40,13 +48,15 @@ public class PoolSystem : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Exibe símbolo como animação Spine (símbolos de alto valor)
+    /// </summary>
     private void ShowSpine(SymbolSystem symbol)
     {
         imageSymbol.gameObject.SetActive(false);
         spineSymbol.gameObject.SetActive(true);
 
         spineSymbol.initialSkinName = symbol.SpineSkin;
-
         spineSymbol.Initialize(true);
 
         if (reelAnimator != null)
@@ -54,21 +64,4 @@ public class PoolSystem : MonoBehaviour
             reelAnimator.RegisterSpine(spineSymbol);
         }
     }
-
-    //todo: remover
-    /*private void ShowSpine(SymbolSystem symbol)
-    {
-        Debug.Log($"SHOW SPINE {symbol.Type}");
-
-        imageSymbol.gameObject.SetActive(false);
-        spineSymbol.gameObject.SetActive(true);
-
-        spineSymbol.initialSkinName = symbol.SpineSkin;
-
-        Debug.Log("ANTES INIT");
-
-        spineSymbol.Initialize(true);
-
-        Debug.Log("DEPOIS INIT");
-    }*/
 }

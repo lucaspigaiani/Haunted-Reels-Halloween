@@ -12,11 +12,19 @@ public class RNGService : MonoBehaviour
     [SerializeField]
     private int rows = 3;
 
+    /// <summary>
+    /// Retorna um símbolo aleatório baseado no peso (Weight) de cada símbolo
+    /// Chamado pelo ReelController durante o spin para obter símbolos visuais
+    /// </summary>
     public SymbolSystem GetVisualSymbol()
     {
         return GetWeightedRandomSymbol();
     }
 
+    /// <summary>
+    /// Gera um resultado completo de spin para todas as posições do grid
+    /// Chamado pelo SpinController para determinar o resultado final da rodada
+    /// </summary>
     public SpinResult GenerateSpinResult()
     {
         SpinResult result = new SpinResult(reels, rows);
@@ -32,27 +40,10 @@ public class RNGService : MonoBehaviour
         return result;
     }
 
-    //TODO: remover
-    public void LogSpinResult(SpinResult result)
-    {
-        Debug.Log("===== SPIN RESULT =====");
-
-        int reels = result.Grid.GetLength(0);
-        int rows = result.Grid.GetLength(1);
-
-        for (int row = 0; row < rows; row++)
-        {
-            string line = "";
-
-            for (int reel = 0; reel < reels; reel++)
-            {
-                line += result.Grid[reel, row].Type + " ";
-            }
-
-            Debug.Log($"row: {row} line: {line}");
-        }
-    }
-
+    /// <summary>
+    /// Seleciona um símbolo aleatório baseado no peso configurado
+    /// Quanto maior o Weight, maior a chance de ser selecionado
+    /// </summary>
     private SymbolSystem GetWeightedRandomSymbol()
     {
         int totalWeight = 0;
