@@ -55,6 +55,8 @@ public class SpinController : MonoBehaviour
         if (!CanBet())
             return;
 
+        paylineDebug.ForceStopPaylines();
+
         _isSpinning = true;
 
         spinButton.interactable = false;

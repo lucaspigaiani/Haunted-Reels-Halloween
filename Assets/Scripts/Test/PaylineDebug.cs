@@ -21,6 +21,7 @@ public class PaylineDebug : MonoBehaviour
     [SerializeField] private float nonWinningDuration = 0.3f;
 
     private Coroutine displayRoutine;
+    private bool isShowingLines = false; // Flag para controlar se está mostrando linhas
 
     private readonly int[,] paylines =
     {
@@ -39,28 +40,31 @@ public class PaylineDebug : MonoBehaviour
     private readonly List<GameObject> activeLines = new();
     private Dictionary<int, PaylineInfo> winningLinesCache = new();
 
-    private void Update()
+    // METODO PUBLICO PARA INTERROMPER A EXIBICAO
+    public void ForceStopPaylines()
     {
-        if (Input.GetKeyDown(KeyCode.E))
+        if (displayRoutine != null)
         {
-            for (int i = 0; i < reels.Length; i++)
-            {
-                reels[i].GetVisibleCells();
-            }
+            StopCoroutine(displayRoutine);
+            displayRoutine = null;
         }
+
+        ClearAllLines();
+        isShowingLines = false;
+        Debug.Log("Exibicao de paylines interrompida e limpa");
     }
 
     public void ShowPaylines(SpinResult spinResult)
     {
-        if (displayRoutine != null)
-            StopCoroutine(displayRoutine);
+        // Interrompe qualquer exibicao anterior imediatamente
+        ForceStopPaylines();
 
+        isShowingLines = true;
         displayRoutine = StartCoroutine(ShowPaylinesSequentially(spinResult));
     }
 
     private IEnumerator ShowPaylinesSequentially(SpinResult spinResult)
     {
-        ClearLines();
         winningLinesCache.Clear();
 
         List<List<PoolSystem>> visibleCellsPerReel = new();
@@ -74,6 +78,13 @@ public class PaylineDebug : MonoBehaviour
 
         for (int paylineIndex = 0; paylineIndex < paylines.GetLength(0); paylineIndex++)
         {
+            // Verifica se foi interrompido antes de continuar
+            if (!isShowingLines)
+            {
+                Debug.Log("Exibicao interrompida durante verificacao");
+                yield break;
+            }
+
             PaylineInfo info = CheckPaylineWinner(spinResult, paylineIndex);
             winningLinesCache[paylineIndex] = info;
 
@@ -92,14 +103,32 @@ public class PaylineDebug : MonoBehaviour
 
         for (int paylineIndex = 0; paylineIndex < paylines.GetLength(0); paylineIndex++)
         {
+            // Verifica se foi interrompido antes de mostrar cada linha
+            if (!isShowingLines)
+            {
+                Debug.Log("Exibicao interrompida durante desenho das linhas");
+                ClearAllLines();
+                yield break;
+            }
+
             PaylineInfo info = winningLinesCache[paylineIndex];
             DrawSinglePayline(paylineIndex, visibleCellsPerReel, info.isWinning);
 
             float displayTime = info.isWinning ? winningDuration : nonWinningDuration;
             yield return new WaitForSeconds(displayTime);
-            ClearLines();
+
+            // Remove apenas a linha atual se ainda estiver ativo
+            if (isShowingLines)
+            {
+                ClearAllLines();
+            }
+            else
+            {
+                yield break;
+            }
         }
 
+        isShowingLines = false;
         displayRoutine = null;
     }
 
@@ -237,7 +266,7 @@ public class PaylineDebug : MonoBehaviour
         return colors[lineIndex % colors.Length];
     }
 
-    private void ClearLines()
+    private void ClearAllLines()
     {
         foreach (GameObject line in activeLines)
         {
@@ -246,6 +275,16 @@ public class PaylineDebug : MonoBehaviour
         }
 
         activeLines.Clear();
+    }
+
+    // Metodo alternativo para limpar apenas uma linha especifica
+    private void ClearSingleLine(GameObject line)
+    {
+        if (line != null && activeLines.Contains(line))
+        {
+            activeLines.Remove(line);
+            Destroy(line);
+        }
     }
 
     private class PaylineInfo
