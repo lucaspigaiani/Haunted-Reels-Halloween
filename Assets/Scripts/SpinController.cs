@@ -55,7 +55,7 @@ public class SpinController : MonoBehaviour
         if (!CanBet())
             return;
 
-        paylineDebug.ForceStopPaylines();
+        paylineSystem.StopPaylineDisplay();
 
         _isSpinning = true;
 
@@ -80,7 +80,6 @@ public class SpinController : MonoBehaviour
     }
 
     private int _stoppedReels;
-    [SerializeField]private PaylineDebug paylineDebug;
 
     private void OnReelStopped()
     {
@@ -97,7 +96,6 @@ public class SpinController : MonoBehaviour
     private void FinishSpin()
     {
         var result = paylineSystem.Evaluate( _currentSpinResult, _currentBet);
-        paylineDebug.ShowPaylines(_currentSpinResult);
 
         PayWin(result.TotalWin);
 

@@ -2363,7 +2363,7 @@ GameObject:
   - component: {fileID: 678418485}
   - component: {fileID: 678418484}
   m_Layer: 5
-  m_Name: Image
+  m_Name: LinePrefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3425,7 +3425,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1026216711}
   - component: {fileID: 1026216713}
-  - component: {fileID: 1026216712}
+  - component: {fileID: 1026216714}
   m_Layer: 5
   m_Name: Payline debug
   m_TagString: Untagged
@@ -3448,31 +3448,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2050818964}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1026216712
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1026216710}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b814af7c2fef31a4c89552280a810fd2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  reels:
-  - {fileID: 786196167}
-  - {fileID: 691889038}
-  - {fileID: 1972354025}
-  - {fileID: 1792406582}
-  - {fileID: 1862838334}
-  canvasRect: {fileID: 606719838}
-  linePrefab: {fileID: 678418482}
-  lineWidth: 10
-  winningLineWidth: 8
-  paylineInterval: 0.02
-  winningDuration: 0.1
-  nonWinningDuration: 0.1
 --- !u!222 &1026216713
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -3481,6 +3456,25 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1026216710}
   m_CullTransparentMesh: 1
+--- !u!114 &1026216714
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1026216710}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d007cea5c02944c4d9f14c45a883a2ac, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  reels: []
+  canvasRect: {fileID: 606719838}
+  linePrefab: {fileID: 678418482}
+  lineWidth: 10
+  winningLineWidth: 8
+  winningDuration: 0.1
+  nonWinningDuration: 0.1
 --- !u!1 &1040771079
 GameObject:
   m_ObjectHideFlags: 0
@@ -5477,7 +5471,7 @@ MonoBehaviour:
   betStep: 10
   autoPlay: 0
   autoPlayDelay: 1.5
-  paylineDebug: {fileID: 1026216712}
+  paylineDebug: {fileID: 0}
 --- !u!1 &1605669351
 GameObject:
   m_ObjectHideFlags: 0
@@ -7946,6 +7940,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   reelAnimator: {fileID: 1871680477}
+  paylineDrawer: {fileID: 0}
   musicSource: {fileID: 0}
   evaluateMusic: {fileID: 0}
   winMusic: {fileID: 0}
