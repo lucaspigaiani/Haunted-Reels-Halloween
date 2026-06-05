@@ -67,7 +67,7 @@ public class SpinController : MonoBehaviour
         _currentSpinResult = rngService.GenerateSpinResult();
 
         //TODO: remover
-        //rngService.LogSpinResult(_currentSpinResult);
+        rngService.LogSpinResult(_currentSpinResult);
 
         for (int i = 0; i < reels.Length; i++)
         {
@@ -78,6 +78,7 @@ public class SpinController : MonoBehaviour
     }
 
     private int _stoppedReels;
+    [SerializeField]private PaylineDebug paylineDebug;
 
     private void OnReelStopped()
     {
@@ -94,6 +95,7 @@ public class SpinController : MonoBehaviour
     private void FinishSpin()
     {
         var result = paylineSystem.Evaluate( _currentSpinResult, _currentBet);
+        paylineDebug.ShowPaylines(_currentSpinResult);
 
         PayWin(result.TotalWin);
 
@@ -130,6 +132,7 @@ public class SpinController : MonoBehaviour
         _currentSpinResult.Grid[reelIndex, 1],
         _currentSpinResult.Grid[reelIndex, 2]
         };
+
     }
 
     private IEnumerator AutoPlayRoutine()

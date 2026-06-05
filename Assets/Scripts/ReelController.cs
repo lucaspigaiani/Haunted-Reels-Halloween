@@ -24,14 +24,12 @@ public class ReelController : MonoBehaviour
     private int _stopRecycleCount;
 
     private SymbolSystem[] _finalSymbols;
-    private int _finalSymbolIndex;
 
     private Action _onReelStopped;
 
     private float[] validPositions = {340f, 170f, 0f, -170f};
 
 
-    private bool _waitingFinalAlignment;
 
     public void Initialize(RNGService rngService)
     {
@@ -46,7 +44,7 @@ public class ReelController : MonoBehaviour
         _isPreparingStop = false;
 
         _recycleCount = 0;
-        _finalSymbolIndex = 0;
+
     }
 
     public void PrepareStop(
@@ -99,14 +97,16 @@ public class ReelController : MonoBehaviour
 
         SymbolSystem symbol;
 
-        if (ShouldRevealFinalSymbols())
+        /*if (ShouldRevealFinalSymbols())
         {
             symbol = GetNextFinalSymbol();
         }
         else
         {
             symbol = _rngService.GetVisualSymbol();
-        }
+        }*/
+
+        symbol = _rngService.GetVisualSymbol();
 
         recycledCell.ShowSymbol(symbol);
 
@@ -115,36 +115,32 @@ public class ReelController : MonoBehaviour
         CheckStopCondition();
     }
 
-    private bool ShouldRevealFinalSymbols()
-    {
-        if (!_isPreparingStop)
-            return false;
 
-        return _recycleCount >= _stopRecycleCount;
-    }
+    /* private void CheckStopCondition()
+     {
+         if (!_isPreparingStop)
+             return;
 
-    private SymbolSystem GetNextFinalSymbol()
-    {
-        if (_finalSymbolIndex >= _finalSymbols.Length)
-            return _finalSymbols[_finalSymbols.Length - 1];
+         if (_finalSymbolIndex < _finalSymbols.Length)
+             return;
 
-        return _finalSymbols[_finalSymbolIndex++];
-    }
+         if (!_waitingFinalAlignment)
+         {
+             _waitingFinalAlignment = true;
+             _stopRecycleCount = _recycleCount + 1;
+             return;
+         }
+
+         if (_recycleCount >= _stopRecycleCount)
+         {
+             StopSpin();
+         }
+     }*/
 
     private void CheckStopCondition()
     {
         if (!_isPreparingStop)
             return;
-
-        if (_finalSymbolIndex < _finalSymbols.Length)
-            return;
-
-        if (!_waitingFinalAlignment)
-        {
-            _waitingFinalAlignment = true;
-            _stopRecycleCount = _recycleCount + 1;
-            return;
-        }
 
         if (_recycleCount >= _stopRecycleCount)
         {
@@ -152,11 +148,22 @@ public class ReelController : MonoBehaviour
         }
     }
 
+    /* private void StopSpin()
+     {
+         _isSpinning = false;
+
+         AlignCells();
+
+         _onReelStopped?.Invoke();
+     }*/
+
     private void StopSpin()
     {
         _isSpinning = false;
 
         AlignCells();
+
+        ApplyFinalSymbolsToVisibleCells();
 
         _onReelStopped?.Invoke();
     }
@@ -222,8 +229,8 @@ public class ReelController : MonoBehaviour
         }
 
         // Debug do resultado final
-        /*
-        Debug.Log($"=== RESULTADO GetVisibleCells ===");
+        
+        /*Debug.Log($"=== RESULTADO GetVisibleCells ===");
         Debug.Log($"Total de células visíveis encontradas: {cellsFound}/3");
 
         for (int i = 0; i < visibleCells.Length; i++)
@@ -266,5 +273,22 @@ public class ReelController : MonoBehaviour
         }
 
         cells[0] = last;
+    }
+
+    private void ApplyFinalSymbolsToVisibleCells()
+    {
+        PoolSystem[] visibleCells = GetVisibleCells();
+
+        if (visibleCells[0] == null ||
+            visibleCells[1] == null ||
+            visibleCells[2] == null)
+        {
+            Debug.LogError("VisibleCells inválido");
+            return;
+        }
+
+        visibleCells[0].ShowSymbol(_finalSymbols[0]);
+        visibleCells[1].ShowSymbol(_finalSymbols[1]);
+        visibleCells[2].ShowSymbol(_finalSymbols[2]);
     }
 }

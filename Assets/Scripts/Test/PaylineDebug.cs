@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public class PaylineDebug : MonoBehaviour
 {
@@ -12,111 +13,207 @@ public class PaylineDebug : MonoBehaviour
 
     [Header("Visual")]
     [SerializeField] private float lineWidth = 5f;
+    [SerializeField] private float winningLineWidth = 8f;
 
     [Header("Timing")]
-    [SerializeField] private float paylineInterval = 0.1f;
-    [SerializeField] private float displayDuration = 0.4f;
+    [SerializeField] private float paylineInterval = 0.15f;
+    [SerializeField] private float winningDuration = 1.2f;
+    [SerializeField] private float nonWinningDuration = 0.3f;
 
     private Coroutine displayRoutine;
 
     private readonly int[,] paylines =
     {
-        {1,1,1,1,1},
-        {0,0,0,0,0},
-        {2,2,2,2,2},
-        {2,1,0,1,2},
-        {0,1,2,1,0},
-        {0,0,1,2,2},
-        {2,2,1,0,0},
-        {0,1,1,2,2},
-        {2,1,1,0,0},
-        {0,1,1,1,2}
+        {1,1,1,1,1}, // Linha 1 - Meio
+        {0,0,0,0,0}, // Linha 2 - Topo
+        {2,2,2,2,2}, // Linha 3 - Baixo
+        {2,1,0,1,2}, // Linha 4
+        {0,1,2,1,0}, // Linha 5
+        {0,0,1,2,2}, // Linha 6
+        {2,2,1,0,0}, // Linha 7
+        {0,1,1,2,2}, // Linha 8
+        {2,1,1,0,0}, // Linha 9
+        {0,1,1,1,2}  // Linha 10
     };
 
     private readonly List<GameObject> activeLines = new();
+    private Dictionary<int, PaylineInfo> winningLinesCache = new();
 
     private void Update()
     {
-        if (!Input.GetKeyDown(KeyCode.Space))
-            return;
+        if (Input.GetKeyDown(KeyCode.E))
+        {
+            for (int i = 0; i < reels.Length; i++)
+            {
+                reels[i].GetVisibleCells();
+            }
+        }
+    }
 
+    public void ShowPaylines(SpinResult spinResult)
+    {
         if (displayRoutine != null)
             StopCoroutine(displayRoutine);
 
-        displayRoutine = StartCoroutine(ShowPaylinesSequentially());
+        displayRoutine = StartCoroutine(ShowPaylinesSequentially(spinResult));
     }
 
-    private IEnumerator ShowPaylinesSequentially()
+    private IEnumerator ShowPaylinesSequentially(SpinResult spinResult)
     {
         ClearLines();
+        winningLinesCache.Clear();
 
         List<List<PoolSystem>> visibleCellsPerReel = new();
-
         for (int reelIndex = 0; reelIndex < reels.Length; reelIndex++)
         {
             PoolSystem[] visibleCells = reels[reelIndex].GetVisibleCells();
-
             visibleCellsPerReel.Add(new List<PoolSystem>(visibleCells));
         }
 
+        Debug.Log("========== VERIFICANDO PAYLINES ==========");
+
         for (int paylineIndex = 0; paylineIndex < paylines.GetLength(0); paylineIndex++)
         {
-            DrawSinglePayline(paylineIndex, visibleCellsPerReel);
+            PaylineInfo info = CheckPaylineWinner(spinResult, paylineIndex);
+            winningLinesCache[paylineIndex] = info;
 
-            yield return new WaitForSeconds(paylineInterval);
+            if (info.isWinning)
+            {
+                Debug.Log($"[POSITIVO] LINHA {paylineIndex + 1} PREMIADA | {info.count}x {info.symbolName} (incluindo {info.wildCount} Wilds) | Símbolos: {info.symbolsString}");
+            }
+            else
+            {
+                Debug.Log($"[NEGATIVO] LINHA {paylineIndex + 1} - Nao premiada | Melhor: {info.bestCount}x {info.bestSymbol} + {info.wildCount} Wilds = {info.count}x | Símbolos: {info.symbolsString}");
+            }
         }
 
-        yield return new WaitForSeconds(displayDuration);
+        Debug.Log("==========================================");
+        yield return new WaitForSeconds(0.2f);
 
-        ClearLines();
+        for (int paylineIndex = 0; paylineIndex < paylines.GetLength(0); paylineIndex++)
+        {
+            PaylineInfo info = winningLinesCache[paylineIndex];
+            DrawSinglePayline(paylineIndex, visibleCellsPerReel, info.isWinning);
+
+            float displayTime = info.isWinning ? winningDuration : nonWinningDuration;
+            yield return new WaitForSeconds(displayTime);
+            ClearLines();
+        }
 
         displayRoutine = null;
     }
 
-    private void DrawSinglePayline(int paylineIndex, List<List<PoolSystem>> visibleCellsPerReel)
+    private PaylineInfo CheckPaylineWinner(SpinResult spinResult, int paylineIndex)
+    {
+        PaylineInfo info = new PaylineInfo();
+
+        // Pega os símbolos da payline
+        List<string> symbols = new List<string>();
+        for (int reel = 0; reel < 5; reel++)
+        {
+            int row = paylines[paylineIndex, reel];
+            SymbolSystem symbol = spinResult.Grid[reel, row];
+            symbols.Add(symbol.Type.ToString());
+        }
+
+        info.symbolsString = string.Join(" ", symbols);
+
+        // Conta quantos Wilds tem na linha
+        int wildCount = symbols.Count(s => s == "Wild");
+        info.wildCount = wildCount;
+
+        // Conta a frequência de cada símbolo (excluindo Wilds)
+        Dictionary<string, int> symbolCounts = new Dictionary<string, int>();
+
+        foreach (string symbol in symbols)
+        {
+            if (symbol == "Wild") continue;
+
+            if (!symbolCounts.ContainsKey(symbol))
+                symbolCounts[symbol] = 0;
+
+            symbolCounts[symbol]++;
+        }
+
+        // Se só tem Wilds na linha
+        if (symbolCounts.Count == 0)
+        {
+            info.isWinning = wildCount >= 3;
+            info.count = wildCount;
+            info.symbolName = "Wild";
+            info.bestCount = wildCount;
+            info.bestSymbol = "Wild";
+            return info;
+        }
+
+        // Encontra o símbolo com maior contagem
+        string bestSymbol = "";
+        int bestCount = 0;
+
+        foreach (var kvp in symbolCounts)
+        {
+            if (kvp.Value > bestCount)
+            {
+                bestCount = kvp.Value;
+                bestSymbol = kvp.Key;
+            }
+        }
+
+        // Soma os Wilds ao melhor símbolo
+        int totalCount = bestCount + wildCount;
+
+        info.bestCount = bestCount;
+        info.bestSymbol = bestSymbol;
+        info.count = totalCount;
+        info.symbolName = bestSymbol;
+        info.isWinning = totalCount >= 3;
+
+        return info;
+    }
+
+    private void DrawSinglePayline(int paylineIndex, List<List<PoolSystem>> visibleCellsPerReel, bool isWinning)
     {
         Vector2[] points = new Vector2[5];
 
         for (int reelIndex = 0; reelIndex < reels.Length; reelIndex++)
         {
             int targetRow = paylines[paylineIndex, reelIndex];
-
             PoolSystem selectedCell = visibleCellsPerReel[reelIndex][targetRow];
-
             points[reelIndex] = selectedCell.transform.position;
         }
 
         for (int i = 0; i < points.Length - 1; i++)
         {
-            CreateLineSegment(points[i], points[i + 1], paylineIndex);
+            CreateLineSegment(points[i], points[i + 1], paylineIndex, isWinning);
         }
     }
 
-    private void CreateLineSegment(Vector2 start, Vector2 end, int lineIndex)
+    private void CreateLineSegment(Vector2 start, Vector2 end, int lineIndex, bool isWinning)
     {
         GameObject lineObj = Instantiate(linePrefab, canvasRect);
-
         lineObj.SetActive(true);
 
         RectTransform rect = lineObj.GetComponent<RectTransform>();
-
         Image image = lineObj.GetComponent<Image>();
 
         Vector2 direction = end - start;
-
         float distance = direction.magnitude;
-
         float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
-
         Vector2 center = (start + end) * 0.5f;
 
         rect.position = center;
-
-        rect.sizeDelta = new Vector2(distance,lineWidth);
-
+        float currentLineWidth = isWinning ? winningLineWidth : lineWidth;
+        rect.sizeDelta = new Vector2(distance, currentLineWidth);
         rect.rotation = Quaternion.Euler(0, 0, angle);
 
-        image.color = GetLineColor(lineIndex);
+        if (isWinning)
+        {
+            image.color = GetLineColor(lineIndex);
+        }
+        else
+        {
+            image.color = Color.white;
+        }
 
         activeLines.Add(lineObj);
     }
@@ -131,10 +228,10 @@ public class PaylineDebug : MonoBehaviour
             Color.blue,
             Color.cyan,
             Color.magenta,
-            Color.white,
             new Color(1f, 0.5f, 0f),
-            Color.gray,
-            Color.black
+            new Color(0.5f, 0f, 0.5f),
+            new Color(1f, 0.8f, 0f),
+            new Color(0f, 0.8f, 0.8f)
         };
 
         return colors[lineIndex % colors.Length];
@@ -149,5 +246,16 @@ public class PaylineDebug : MonoBehaviour
         }
 
         activeLines.Clear();
+    }
+
+    private class PaylineInfo
+    {
+        public bool isWinning;
+        public int count;
+        public int bestCount;
+        public int wildCount;
+        public string symbolName;
+        public string bestSymbol;
+        public string symbolsString;
     }
 }

@@ -49,7 +49,7 @@ public class RNGService : MonoBehaviour
                 line += result.Grid[reel, row].Type + " ";
             }
 
-            Debug.Log(line);
+            Debug.Log($"row: {row} line: {line}");
         }
     }
 

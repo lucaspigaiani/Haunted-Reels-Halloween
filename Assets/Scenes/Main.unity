@@ -2268,7 +2268,6 @@ RectTransform:
   - {fileID: 789713014}
   - {fileID: 1605669352}
   - {fileID: 810647014}
-  - {fileID: 1026216711}
   - {fileID: 678418483}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2369,7 +2368,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &678418483
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3428,31 +3427,27 @@ GameObject:
   - component: {fileID: 1026216713}
   - component: {fileID: 1026216712}
   m_Layer: 5
-  m_Name: PaylineLine
+  m_Name: Payline debug
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!224 &1026216711
-RectTransform:
+--- !u!4 &1026216711
+Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1026216710}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 606719838}
+  m_Father: {fileID: 2050818964}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 150.39758}
-  m_SizeDelta: {x: 1000, y: 535.0386}
-  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1026216712
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3474,8 +3469,10 @@ MonoBehaviour:
   canvasRect: {fileID: 606719838}
   linePrefab: {fileID: 678418482}
   lineWidth: 10
-  lineColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
-  displayDuration: 2
+  winningLineWidth: 8
+  paylineInterval: 0.02
+  winningDuration: 0.2
+  nonWinningDuration: 0.1
 --- !u!222 &1026216713
 CanvasRenderer:
   m_ObjectHideFlags: 0
@@ -5480,6 +5477,7 @@ MonoBehaviour:
   betStep: 10
   autoPlay: 0
   autoPlayDelay: 1.5
+  paylineDebug: {fileID: 1026216712}
 --- !u!1 &1605669351
 GameObject:
   m_ObjectHideFlags: 0
@@ -7637,6 +7635,7 @@ Transform:
   - {fileID: 1802637274}
   - {fileID: 1602982428}
   - {fileID: 1968820358}
+  - {fileID: 1026216711}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2061140513
