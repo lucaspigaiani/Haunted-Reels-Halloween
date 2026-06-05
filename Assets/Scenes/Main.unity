@@ -3471,7 +3471,7 @@ MonoBehaviour:
   lineWidth: 10
   winningLineWidth: 8
   paylineInterval: 0.02
-  winningDuration: 0.2
+  winningDuration: 0.1
   nonWinningDuration: 0.1
 --- !u!222 &1026216713
 CanvasRenderer:
