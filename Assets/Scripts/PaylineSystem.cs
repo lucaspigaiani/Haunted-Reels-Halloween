@@ -8,12 +8,6 @@ public class PaylineSystem : MonoBehaviour
     [SerializeField] private ReelAnimator reelAnimator;
     [SerializeField] private PaylineDrawer paylineDrawer;
 
-    [Header("Audio")]
-    [SerializeField] private AudioSource musicSource;
-    [SerializeField] private AudioClip evaluateMusic;
-    [SerializeField] private AudioClip winMusic;
-    [SerializeField] private AudioClip payoutSfx;
-
     private readonly int[,] paylines = new int[,]
     {
         {1,1,1,1,1}, {0,0,0,0,0}, {2,2,2,2,2},
@@ -36,7 +30,7 @@ public class PaylineSystem : MonoBehaviour
 
     public PaylineResult Evaluate(SpinResult spinResult, int totalBet)
     {
-        PlayEvaluateMusic();
+        AudioManager.PlayEvaluate();
 
         PaylineResult result = new PaylineResult();
         float lineBet = totalBet / 10f;
@@ -60,7 +54,13 @@ public class PaylineSystem : MonoBehaviour
             paylineDrawer.DrawPaylinesSequentially(evaluations);
 
         if (result.TotalWin > 0)
-            PlayWinEffects(result);
+        {
+            AudioManager.PlayWin();
+            AudioManager.PlayPayout();
+
+            if (reelAnimator != null)
+                reelAnimator.PlayIdle();
+        }
 
         return result;
     }
@@ -99,27 +99,5 @@ public class PaylineSystem : MonoBehaviour
     {
         if (paylineDrawer != null)
             paylineDrawer.StopDrawing();
-    }
-
-    private void PlayEvaluateMusic()
-    {
-        if (musicSource == null || evaluateMusic == null) return;
-        musicSource.clip = evaluateMusic;
-        musicSource.Play();
-    }
-
-    private void PlayWinEffects(PaylineResult result)
-    {
-        if (musicSource != null && winMusic != null)
-        {
-            musicSource.clip = winMusic;
-            musicSource.Play();
-        }
-
-        if (payoutSfx != null)
-            AudioSource.PlayClipAtPoint(payoutSfx, Vector3.zero);
-
-        if (reelAnimator != null)
-            reelAnimator.PlayIdle();
     }
 }

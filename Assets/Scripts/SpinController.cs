@@ -79,6 +79,7 @@ public class SpinController : MonoBehaviour
         if (!CanBet())
             return;
 
+        AudioManager.PlayButtonClick();
         paylineSystem.StopPaylineDisplay();
 
         _isSpinning = true;
@@ -94,6 +95,8 @@ public class SpinController : MonoBehaviour
             reels[i].StartSpin(OnReelStopped);
         }
 
+        AudioManager.PlaySpin();
+
         StartCoroutine(PrepareStopRoutine());
     }
 
@@ -102,6 +105,8 @@ public class SpinController : MonoBehaviour
     /// </summary>
     private void OnReelStopped()
     {
+        AudioManager.PlayReelStop();
+
         _stoppedReels++;
 
         if (_stoppedReels < reels.Length)
@@ -116,6 +121,8 @@ public class SpinController : MonoBehaviour
     /// </summary>
     private void FinishSpin()
     {
+        AudioManager.StopSpin();
+
         var result = paylineSystem.Evaluate(_currentSpinResult, _currentBet);
         PayWin(result.TotalWin);
         winText.text = FormatMoney(result.TotalWin);
@@ -187,6 +194,8 @@ public class SpinController : MonoBehaviour
         if (_isSpinning)
             return;
 
+        AudioManager.PlayButtonClick();
+
         autoPlay = !autoPlay;
         UpdateButtonsState();
 
@@ -213,6 +222,8 @@ public class SpinController : MonoBehaviour
     {
         if (_isSpinning || autoPlay)
             return;
+
+        AudioManager.PlayButtonClick();
 
         _currentBet += betStep;
 
